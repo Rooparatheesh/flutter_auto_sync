@@ -1,3 +1,11 @@
+## 0.0.4
+
+- Fixed LICENSE file to use a recognized OSI-approved MIT license
+- Updated dependencies to latest compatible versions
+- Fixed analyzer warnings and improved code quality
+- Improved connectivity handling logic
+- Updated documentation
+
 ## 0.0.3
 
 - Updated dependencies to latest versions
