@@ -1,0 +1,19 @@
+name: flutter_auto_sync
+description: A Flutter package for offline data storage and automatic API sync when internet is available.
+version: 0.0.1
+homepage: https://github.com/Rooparatheesh/flutter_auto_sync
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  connectivity_plus: ^5.0.2
+  http: ^1.2.0
+  uuid: ^4.3.3
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
