@@ -24,6 +24,7 @@ class AutoSyncManager {
     });
   }
 
+  /// Adds a new API request to the offline queue.
   static Future<void> addToQueue({
     required String endpoint,
     required Map<String, dynamic> data,
@@ -37,5 +38,10 @@ class AutoSyncManager {
     );
 
     await LocalStorage.addItem(item);
+  }
+
+  /// Manually trigger synchronization of queued requests.
+  static Future<void> sync() async {
+    await SyncService.sync();
   }
 }
