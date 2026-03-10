@@ -1,3 +1,11 @@
+## 0.0.3
+
+- Updated dependencies to latest versions
+- Fixed connectivity check for new connectivity_plus API
+- Improved code quality based on Flutter analyzer suggestions
+- Added const constructors where possible
+- Improved documentation comments
+
 ## 0.0.2
 
 - Added retry mechanism for failed sync requests
