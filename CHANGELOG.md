@@ -1,3 +1,8 @@
+
+## 0.0.5
+
+- Fixed  files  
+
 ## 0.0.4
 
 - Fixed LICENSE file to use a recognized OSI-approved MIT license
