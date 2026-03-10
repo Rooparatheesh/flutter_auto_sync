@@ -1,6 +1,15 @@
 import 'package:hive_flutter/hive_flutter.dart';
 import 'models/sync_item.dart';
 
+/// Handles local storage of sync queue items using Hive.
+///
+/// This class is responsible for:
+/// - Initializing Hive database
+/// - Adding items to the sync queue
+/// - Retrieving stored sync items
+/// - Updating retry information
+/// - Removing synced items
+///
 class LocalStorage {
   static const String boxName = "sync_queue";
 

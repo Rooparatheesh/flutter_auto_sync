@@ -1,0 +1,21 @@
+name: flutter_auto_sync_example
+description: Example app demonstrating how to use the flutter_auto_sync package.
+publish_to: "none"
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Use the local package
+  flutter_auto_sync:
+    path: ../
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true

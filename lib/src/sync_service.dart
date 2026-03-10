@@ -3,6 +3,12 @@ import 'package:http/http.dart' as http;
 import 'local_storage.dart';
 import 'models/sync_item.dart';
 
+/// Service responsible for syncing offline stored API requests
+/// with the backend server.
+///
+/// It reads pending items from local storage and sends them
+/// to the server when internet connectivity is available.
+/// Failed requests are retried up to a maximum retry limit.
 class SyncService {
   static const int maxRetries = 3;
 

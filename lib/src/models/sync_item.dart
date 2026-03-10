@@ -1,3 +1,11 @@
+/// Represents a single API request stored in the offline sync queue.
+///
+/// Each SyncItem contains the API endpoint, request data,
+/// HTTP method, and retry information.
+/// These items are stored locally and synced with the server
+/// when internet connectivity becomes available.
+library;
+
 class SyncItem {
   final String id;
   final String endpoint;

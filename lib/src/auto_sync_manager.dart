@@ -4,8 +4,15 @@ import 'local_storage.dart';
 import 'models/sync_item.dart';
 import 'sync_service.dart';
 
+/// Main controller that manages offline data synchronization.
+///
+/// This class:
+/// - Initializes the offline sync system
+/// - Listens for internet connectivity changes
+/// - Automatically triggers sync when internet returns
+/// - Adds API requests to the offline queue
 class AutoSyncManager {
-  static final _uuid = Uuid();
+  static const _uuid = Uuid();
 
   static Future<void> init() async {
     await LocalStorage.init();
