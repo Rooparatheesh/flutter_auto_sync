@@ -3,6 +3,7 @@ class SyncItem {
   final String endpoint;
   final Map<String, dynamic> data;
   final String method;
+  int retryCount;
   bool synced;
 
   SyncItem({
@@ -10,6 +11,7 @@ class SyncItem {
     required this.endpoint,
     required this.data,
     required this.method,
+    this.retryCount = 0,
     this.synced = false,
   });
 

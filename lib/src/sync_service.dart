@@ -1,10 +1,11 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'local_storage.dart';
 import 'models/sync_item.dart';
 
 class SyncService {
+  static const int maxRetries = 3;
+
   static Future<void> sync() async {
     final items = LocalStorage.getItems();
 
@@ -20,7 +21,13 @@ class SyncService {
           await LocalStorage.removeItem(item.id);
         }
       } catch (e) {
-        debugPrint("Sync failed: $e");
+        item.retryCount++;
+
+        if (item.retryCount >= maxRetries) {
+          await LocalStorage.removeItem(item.id);
+        } else {
+          await LocalStorage.updateItem(item); // save retry count
+        }
       }
     }
   }

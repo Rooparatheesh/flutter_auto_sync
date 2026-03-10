@@ -25,4 +25,10 @@ class LocalStorage {
     final box = Hive.box(boxName);
     await box.delete(id);
   }
+
+  // ⭐ NEW METHOD (needed for retry system)
+  static Future<void> updateItem(SyncItem item) async {
+    final box = Hive.box(boxName);
+    await box.put(item.id, item.toJson());
+  }
 }
