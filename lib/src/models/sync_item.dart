@@ -14,6 +14,7 @@ class SyncItem {
   final Map<String, String>? headers;
   int retryCount;
   bool synced;
+  int priority;
 
   SyncItem({
     required this.id,
@@ -23,6 +24,7 @@ class SyncItem {
     this.headers,
     this.retryCount = 0,
     this.synced = false,
+    this.priority = 0,
   });
 
   Map<String, dynamic> toJson() {
@@ -34,6 +36,7 @@ class SyncItem {
       "headers": headers,
       "retryCount": retryCount,
       "synced": synced,
+      "priority": priority,
     };
   }
 
@@ -46,6 +49,7 @@ class SyncItem {
       headers: json["headers"] != null ? Map<String, String>.from(json["headers"]) : null,
       retryCount: json["retryCount"] ?? 0,
       synced: json["synced"],
+      priority: json["priority"] ?? 0,
     );
   }
 }

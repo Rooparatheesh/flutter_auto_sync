@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'local_storage.dart';
 import 'models/sync_item.dart';
+import 'auto_sync_manager.dart';
 
 /// Service responsible for syncing offline stored API requests
 /// with the backend server.
@@ -16,6 +17,7 @@ class SyncService {
   static Future<void> sync() async {
     if (_isSyncing) return;
     _isSyncing = true;
+    AutoSyncManager.setSyncingState(true);
     
     try {
       final items = LocalStorage.getItems();
@@ -46,6 +48,7 @@ class SyncService {
 
           if (response.statusCode >= 200 && response.statusCode < 300) {
             await LocalStorage.removeItem(item.id);
+            AutoSyncManager.updatePendingItemsCount();
           } else {
             // Treat non-2xx as a failure to trigger retry logic
             throw Exception('HTTP Error: ${response.statusCode}');
@@ -55,6 +58,7 @@ class SyncService {
 
           if (item.retryCount >= maxRetries) {
             await LocalStorage.removeItem(item.id);
+            AutoSyncManager.updatePendingItemsCount();
           } else {
             await LocalStorage.updateItem(item); // save retry count
           }
@@ -62,6 +66,7 @@ class SyncService {
       }
     } finally {
       _isSyncing = false;
+      AutoSyncManager.setSyncingState(false);
     }
   }
 }
