@@ -1,4 +1,15 @@
 
+## 1.0.0
+
+- **Feature**: Real-time streams for UI integration (`AutoSyncManager.pendingItemsStream` and `isSyncingStream`).
+- **Feature**: AES database encryption via `flutter_secure_storage` to secure offline payloads.
+- **Feature**: Queue prioritization (`priority` parameter in `addToQueue`).
+- **Feature**: Support for all HTTP methods (GET, POST, PUT, DELETE, PATCH).
+- **Feature**: Support for custom headers (e.g., Authorization tokens).
+- **Fix**: Proper `retryCount` persistence across app restarts.
+- **Fix**: Better HTTP success code handling (treats all 2xx responses as success).
+- **Fix**: Added concurrent sync lock to prevent duplicate network calls.
+
 ## 0.0.5
 
 - Fixed  files  

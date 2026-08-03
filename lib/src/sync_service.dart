@@ -18,7 +18,7 @@ class SyncService {
     if (_isSyncing) return;
     _isSyncing = true;
     AutoSyncManager.setSyncingState(true);
-    
+
     try {
       final items = LocalStorage.getItems();
 
@@ -33,7 +33,7 @@ class SyncService {
 
           http.Response response;
           final method = item.method.toUpperCase();
-          
+
           if (method == "GET") {
             response = await http.get(uri, headers: headers);
           } else if (method == "PUT") {

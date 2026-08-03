@@ -16,8 +16,10 @@ class AutoSyncManager {
   static const _uuid = Uuid();
 
   // Streams for UI integration
-  static final StreamController<int> _pendingItemsController = StreamController<int>.broadcast();
-  static final StreamController<bool> _isSyncingController = StreamController<bool>.broadcast();
+  static final StreamController<int> _pendingItemsController =
+      StreamController<int>.broadcast();
+  static final StreamController<bool> _isSyncingController =
+      StreamController<bool>.broadcast();
 
   static Stream<int> get pendingItemsStream => _pendingItemsController.stream;
   static Stream<bool> get isSyncingStream => _isSyncingController.stream;

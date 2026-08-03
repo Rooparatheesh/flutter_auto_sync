@@ -46,7 +46,9 @@ class SyncItem {
       endpoint: json["endpoint"],
       data: Map<String, dynamic>.from(json["data"]),
       method: json["method"],
-      headers: json["headers"] != null ? Map<String, String>.from(json["headers"]) : null,
+      headers: json["headers"] != null
+          ? Map<String, String>.from(json["headers"])
+          : null,
       retryCount: json["retryCount"] ?? 0,
       synced: json["synced"],
       priority: json["priority"] ?? 0,

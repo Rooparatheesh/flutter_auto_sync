@@ -18,10 +18,10 @@ class LocalStorage {
 
   static Future<void> init() async {
     await Hive.initFlutter();
-    
+
     const secureStorage = FlutterSecureStorage();
     String? encryptionKeyStr = await secureStorage.read(key: keyName);
-    
+
     if (encryptionKeyStr == null) {
       final key = Hive.generateSecureKey();
       await secureStorage.write(
@@ -30,7 +30,7 @@ class LocalStorage {
       );
       encryptionKeyStr = base64UrlEncode(key);
     }
-    
+
     final encryptionKey = base64Url.decode(encryptionKeyStr);
     await Hive.openBox(boxName, encryptionCipher: HiveAesCipher(encryptionKey));
   }
@@ -45,7 +45,7 @@ class LocalStorage {
     final items = box.values
         .map((e) => SyncItem.fromJson(Map<String, dynamic>.from(e)))
         .toList();
-        
+
     // Sort by priority descending (highest priority first)
     items.sort((a, b) => b.priority.compareTo(a.priority));
     return items;
