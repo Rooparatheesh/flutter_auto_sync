@@ -1,5 +1,5 @@
 
-## 1.0.0
+## 0.0.6
 
 - **Feature**: Real-time streams for UI integration (`AutoSyncManager.pendingItemsStream` and `isSyncingStream`).
 - **Feature**: AES database encryption via `flutter_secure_storage` to secure offline payloads.
