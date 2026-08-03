@@ -16,7 +16,7 @@ A Flutter package that automatically stores API requests offline and securely sy
 
 ```yaml
 dependencies:
-  flutter_auto_sync: ^0.0.8
+  flutter_auto_sync: ^1.1.0
 ```
 
 ## Usage

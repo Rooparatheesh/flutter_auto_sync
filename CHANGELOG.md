@@ -1,11 +1,8 @@
 
-## 0.0.8
-
-- **Doc**: Added full dartdoc comments to 100% of the public API to achieve a perfect 140/140 pub.dev score.
-
-## 0.0.7
+## 1.1.0
 
 - **Feature**: Added Offline File Upload support (MultipartRequests). Developers can now pass local file paths to `addToQueue` and they will automatically upload when internet is restored.
+- **Doc**: Added full dartdoc comments to 100% of the public API to achieve a perfect 140/140 pub.dev score.
 
 ## 1.0.0
 
