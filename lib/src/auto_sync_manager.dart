@@ -29,12 +29,14 @@ class AutoSyncManager {
     required String endpoint,
     required Map<String, dynamic> data,
     String method = "POST",
+    Map<String, String>? headers,
   }) async {
     final item = SyncItem(
       id: _uuid.v4(),
       endpoint: endpoint,
       data: data,
       method: method,
+      headers: headers,
     );
 
     await LocalStorage.addItem(item);

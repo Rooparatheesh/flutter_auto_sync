@@ -11,6 +11,7 @@ class SyncItem {
   final String endpoint;
   final Map<String, dynamic> data;
   final String method;
+  final Map<String, String>? headers;
   int retryCount;
   bool synced;
 
@@ -19,6 +20,7 @@ class SyncItem {
     required this.endpoint,
     required this.data,
     required this.method,
+    this.headers,
     this.retryCount = 0,
     this.synced = false,
   });
@@ -29,6 +31,8 @@ class SyncItem {
       "endpoint": endpoint,
       "data": data,
       "method": method,
+      "headers": headers,
+      "retryCount": retryCount,
       "synced": synced,
     };
   }
@@ -39,6 +43,8 @@ class SyncItem {
       endpoint: json["endpoint"],
       data: Map<String, dynamic>.from(json["data"]),
       method: json["method"],
+      headers: json["headers"] != null ? Map<String, String>.from(json["headers"]) : null,
+      retryCount: json["retryCount"] ?? 0,
       synced: json["synced"],
     );
   }
