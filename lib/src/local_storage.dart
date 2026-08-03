@@ -13,9 +13,12 @@ import 'models/sync_item.dart';
 /// - Removing synced items
 ///
 class LocalStorage {
+  /// Name of the Hive box used for storing the queue.
   static const String boxName = "sync_queue";
+  /// Key name used in secure storage to fetch the AES key.
   static const String keyName = "hive_encryption_key";
 
+  /// Initializes the Hive database with AES encryption.
   static Future<void> init() async {
     await Hive.initFlutter();
 
@@ -35,11 +38,13 @@ class LocalStorage {
     await Hive.openBox(boxName, encryptionCipher: HiveAesCipher(encryptionKey));
   }
 
+  /// Adds a new SyncItem to the local database.
   static Future<void> addItem(SyncItem item) async {
     final box = Hive.box(boxName);
     await box.put(item.id, item.toJson());
   }
 
+  /// Retrieves all pending sync items, sorted by priority (highest first).
   static List<SyncItem> getItems() {
     final box = Hive.box(boxName);
     final items = box.values
@@ -51,11 +56,13 @@ class LocalStorage {
     return items;
   }
 
+  /// Removes a synced item from the database by its ID.
   static Future<void> removeItem(String id) async {
     final box = Hive.box(boxName);
     await box.delete(id);
   }
 
+  /// Updates an existing item in the database (e.g., updating retryCount).
   static Future<void> updateItem(SyncItem item) async {
     final box = Hive.box(boxName);
     await box.put(item.id, item.toJson());

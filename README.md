@@ -16,7 +16,7 @@ A Flutter package that automatically stores API requests offline and securely sy
 
 ```yaml
 dependencies:
-  flutter_auto_sync: ^0.0.6
+  flutter_auto_sync: ^0.0.8
 ```
 
 ## Usage
@@ -36,6 +36,9 @@ await AutoSyncManager.addToQueue(
     "Content-Type": "application/json",
   },
   data: {"name": "Roopa"},
+  files: {
+    "profile_picture": "/path/to/local/image.jpg", // (Optional) Upload files offline!
+  },
   priority: 1, // Higher priority items sync first
 );
 ```

@@ -11,9 +11,14 @@ import 'auto_sync_manager.dart';
 /// to the server when internet connectivity is available.
 /// Failed requests are retried up to a maximum retry limit.
 class SyncService {
+  /// The maximum number of times an API request will be retried before being discarded.
   static const int maxRetries = 3;
   static bool _isSyncing = false;
 
+  /// Triggers a synchronization attempt.
+  /// 
+  /// This method iterates through all pending items in the offline queue,
+  /// attempts to send them via HTTP, and removes them if successful.
   static Future<void> sync() async {
     if (_isSyncing) return;
     _isSyncing = true;
@@ -34,16 +39,34 @@ class SyncService {
           http.Response response;
           final method = item.method.toUpperCase();
 
-          if (method == "GET") {
-            response = await http.get(uri, headers: headers);
-          } else if (method == "PUT") {
-            response = await http.put(uri, headers: headers, body: body);
-          } else if (method == "DELETE") {
-            response = await http.delete(uri, headers: headers, body: body);
-          } else if (method == "PATCH") {
-            response = await http.patch(uri, headers: headers, body: body);
+          if (item.files != null && item.files!.isNotEmpty) {
+            var request = http.MultipartRequest(method, uri);
+            request.headers.addAll(headers);
+
+            item.data.forEach((key, value) {
+              request.fields[key] = value.toString();
+            });
+
+            for (var entry in item.files!.entries) {
+              request.files.add(
+                await http.MultipartFile.fromPath(entry.key, entry.value),
+              );
+            }
+
+            final streamedResponse = await request.send();
+            response = await http.Response.fromStream(streamedResponse);
           } else {
-            response = await http.post(uri, headers: headers, body: body);
+            if (method == "GET") {
+              response = await http.get(uri, headers: headers);
+            } else if (method == "PUT") {
+              response = await http.put(uri, headers: headers, body: body);
+            } else if (method == "DELETE") {
+              response = await http.delete(uri, headers: headers, body: body);
+            } else if (method == "PATCH") {
+              response = await http.patch(uri, headers: headers, body: body);
+            } else {
+              response = await http.post(uri, headers: headers, body: body);
+            }
           }
 
           if (response.statusCode >= 200 && response.statusCode < 300) {

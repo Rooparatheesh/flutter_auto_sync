@@ -21,9 +21,14 @@ class AutoSyncManager {
   static final StreamController<bool> _isSyncingController =
       StreamController<bool>.broadcast();
 
+  /// Stream that emits the current count of pending offline items.
   static Stream<int> get pendingItemsStream => _pendingItemsController.stream;
+  
+  /// Stream that emits `true` when the background sync is actively running, and `false` otherwise.
   static Stream<bool> get isSyncingStream => _isSyncingController.stream;
 
+  /// Initializes the AutoSyncManager and its dependencies (like Hive storage).
+  /// This must be called before adding any items to the queue.
   static Future<void> init() async {
     await LocalStorage.init();
     updatePendingItemsCount();
@@ -41,6 +46,7 @@ class AutoSyncManager {
     required Map<String, dynamic> data,
     String method = "POST",
     Map<String, String>? headers,
+    Map<String, String>? files,
     int priority = 0,
   }) async {
     final item = SyncItem(
@@ -49,6 +55,7 @@ class AutoSyncManager {
       data: data,
       method: method,
       headers: headers,
+      files: files,
       priority: priority,
     );
 
