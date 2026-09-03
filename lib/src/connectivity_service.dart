@@ -10,7 +10,7 @@ class ConnectivityService {
   /// Checks if the device is currently online.
   static Future<bool> isOnline() async {
     final result = await Connectivity().checkConnectivity();
-    // ignore: unrelated_type_equality_checks
-    return result != ConnectivityResult.none;
+    // In connectivity_plus ^6.0.0 and above, it returns a List<ConnectivityResult>
+    return !result.contains(ConnectivityResult.none) && result.isNotEmpty;
   }
 }

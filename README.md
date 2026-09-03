@@ -6,7 +6,7 @@ A Flutter package that automatically stores API requests offline and securely sy
 
 ✔ **Offline Data Storage** - Uses Hive for fast local storage.
 ✔ **Enterprise Security** - Automatically encrypts the offline database using AES 256-bit encryption via `flutter_secure_storage`.
-✔ **Automatic Background Sync** - Syncs automatically when network connectivity is restored.
+✔ **True Background Sync (Killed State)** - Uses `workmanager` to sync data seamlessly even when the app is completely closed.
 ✔ **Queue Prioritization** - Ensure critical API calls are dispatched first.
 ✔ **Real-time UI Streams** - Listen to sync status and pending item counts.
 ✔ **Retry Mechanism** - Failed requests are retried up to 3 times across app restarts.
@@ -35,8 +35,17 @@ dependencies:
 ```dart
 import 'package:flutter_auto_sync/flutter_auto_sync.dart';
 
-// Initialize the package (automatically sets up AES encryption)
-await AutoSyncManager.init();
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // 1. Initialize foreground syncing & local database
+  await AutoSyncManager.init();
+  
+  // 2. Enable True Background Sync (runs even if app is swiped away/killed)
+  AutoSyncManager.initializeBackgroundSync();
+  
+  runApp(MyApp());
+}
 
 // Add a request to the offline queue
 await AutoSyncManager.addToQueue(

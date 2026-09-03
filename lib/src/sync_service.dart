@@ -19,13 +19,16 @@ class SyncService {
   /// 
   /// This method iterates through all pending items in the offline queue,
   /// attempts to send them via HTTP, and removes them if successful.
-  static Future<void> sync() async {
+  static Future<void> sync({bool isBackground = false}) async {
     if (_isSyncing) return;
     _isSyncing = true;
     AutoSyncManager.setSyncingState(true);
 
     try {
       final items = LocalStorage.getItems();
+      print("🔄 [SyncService] Found ${items.length} pending items in offline queue.");
+      if (items.isEmpty) return;
+      
       const timeoutDuration = Duration(seconds: 15);
 
       for (SyncItem item in items) {
@@ -71,9 +74,12 @@ class SyncService {
           }
 
           if (response.statusCode >= 200 && response.statusCode < 300) {
+            final stateStr = isBackground ? "(Killed/Background State)" : "(Foreground State)";
+            print("✅ [SyncService] $stateStr Successfully synced request: ${item.endpoint}");
             await LocalStorage.removeItem(item.id);
             AutoSyncManager.updatePendingItemsCount();
           } else if (response.statusCode >= 400 && response.statusCode < 500) {
+            print("⚠️ [SyncService] Client Error (discarded): ${response.statusCode} for ${item.endpoint}");
             // Client errors (4xx) generally won't succeed on retry, discard them.
             // (Note: you may want to customize this if you handle 401 token refreshes elsewhere)
             await LocalStorage.removeItem(item.id);
