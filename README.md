@@ -6,7 +6,7 @@ A Flutter package that automatically stores API requests offline and securely sy
 
 ✔ **Offline Data Storage** - Uses Hive for fast local storage.
 ✔ **Enterprise Security** - Automatically encrypts the offline database using AES 256-bit encryption via `flutter_secure_storage`.
-✔ **True Background Sync (Killed State)** - Uses `workmanager` to sync data seamlessly even when the app is completely closed.
+✔ **Instant Background Sync (Killed State)** - Uses a persistent foreground service to **instantly** sync data the second connectivity returns, even when the app is completely closed.
 ✔ **Queue Prioritization** - Ensure critical API calls are dispatched first.
 ✔ **Real-time UI Streams** - Listen to sync status and pending item counts.
 ✔ **Retry Mechanism** - Failed requests are retried up to 3 times across app restarts.
@@ -30,6 +30,25 @@ dependencies:
   flutter_auto_sync: ^1.1.0
 ```
 
+### Android Setup
+
+Because this package uses a Foreground Service to achieve instant syncing in the killed state, you **must** add the following permissions to your `android/app/src/main/AndroidManifest.xml`:
+
+```xml
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <application ...>
+        <!-- Required for flutter_background_service -->
+        <service
+            android:name="id.flutter.flutter_background_service.BackgroundService"
+            android:foregroundServiceType="dataSync" />
+        <activity ...>
+```
+
 ## Usage
 
 ```dart
@@ -41,7 +60,7 @@ void main() async {
   // 1. Initialize foreground syncing & local database
   await AutoSyncManager.init();
   
-  // 2. Enable True Background Sync (runs even if app is swiped away/killed)
+  // 2. Enable Instant Background Sync (Keeps app alive via Foreground Service)
   AutoSyncManager.initializeBackgroundSync();
   
   runApp(MyApp());
