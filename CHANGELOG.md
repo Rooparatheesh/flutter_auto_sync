@@ -1,3 +1,7 @@
+## 1.2.0
+
+- **Feature**: Replaced `workmanager` with `flutter_background_service`. The package now uses a persistent Foreground Service to achieve **instant** background syncing the exact second network connectivity is restored, even when the app is killed.
+- **Dependency**: Removed `workmanager`. Added `flutter_background_service` and `flutter_local_notifications`.
 
 ## 1.1.0
 
