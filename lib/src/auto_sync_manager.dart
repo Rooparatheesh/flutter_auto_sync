@@ -21,14 +21,8 @@ class AutoSyncManager {
   static final StreamController<bool> _isSyncingController =
       StreamController<bool>.broadcast();
 
-  /// Stream that emits the current count of pending offline items.
+  /// Stream that emits the current count of pending offline items.updcte  my   packge 
   static Stream<int> get pendingItemsStream => _pendingItemsController.stream;
-  
-  /// Stream that emits `true` when the background sync is actively running, and `false` otherwise.
-  static Stream<bool> get isSyncingStream => _isSyncingController.stream;
-
-  /// Initializes the AutoSyncManager and its dependencies (like Hive storage).
-  /// This must be called before adding any items to the queue.
   static Future<void> init() async {
     await LocalStorage.init();
     updatePendingItemsCount();

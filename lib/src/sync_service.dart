@@ -26,6 +26,7 @@ class SyncService {
 
     try {
       final items = LocalStorage.getItems();
+      const timeoutDuration = Duration(seconds: 15);
 
       for (SyncItem item in items) {
         try {
@@ -53,27 +54,32 @@ class SyncService {
               );
             }
 
-            final streamedResponse = await request.send();
+            final streamedResponse = await request.send().timeout(timeoutDuration);
             response = await http.Response.fromStream(streamedResponse);
           } else {
             if (method == "GET") {
-              response = await http.get(uri, headers: headers);
+              response = await http.get(uri, headers: headers).timeout(timeoutDuration);
             } else if (method == "PUT") {
-              response = await http.put(uri, headers: headers, body: body);
+              response = await http.put(uri, headers: headers, body: body).timeout(timeoutDuration);
             } else if (method == "DELETE") {
-              response = await http.delete(uri, headers: headers, body: body);
+              response = await http.delete(uri, headers: headers, body: body).timeout(timeoutDuration);
             } else if (method == "PATCH") {
-              response = await http.patch(uri, headers: headers, body: body);
+              response = await http.patch(uri, headers: headers, body: body).timeout(timeoutDuration);
             } else {
-              response = await http.post(uri, headers: headers, body: body);
+              response = await http.post(uri, headers: headers, body: body).timeout(timeoutDuration);
             }
           }
 
           if (response.statusCode >= 200 && response.statusCode < 300) {
             await LocalStorage.removeItem(item.id);
             AutoSyncManager.updatePendingItemsCount();
+          } else if (response.statusCode >= 400 && response.statusCode < 500) {
+            // Client errors (4xx) generally won't succeed on retry, discard them.
+            // (Note: you may want to customize this if you handle 401 token refreshes elsewhere)
+            await LocalStorage.removeItem(item.id);
+            AutoSyncManager.updatePendingItemsCount();
           } else {
-            // Treat non-2xx as a failure to trigger retry logic
+            // Treat 5xx or other errors as a failure to trigger retry logic
             throw Exception('HTTP Error: ${response.statusCode}');
           }
         } catch (e) {
