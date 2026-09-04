@@ -4,6 +4,7 @@ A Flutter package that automatically stores API requests offline and securely sy
 
 ## Features
 
+✔ **Kill-Proof Architecture** - The background service acts as the single source of truth, allowing you to queue 50,000+ requests and force-kill the app instantly without interrupting the sync loop or corrupting the database.
 ✔ **Offline Data Storage** - Uses Hive for fast local storage.
 ✔ **Enterprise Security** - Automatically encrypts the offline database using AES 256-bit encryption via `flutter_secure_storage`.
 ✔ **Instant Background Sync (Killed State)** - Uses a persistent foreground service to **instantly** sync data the second connectivity returns, even when the app is completely closed.
