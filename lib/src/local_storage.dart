@@ -35,6 +35,11 @@ class LocalStorage {
     }
 
     final encryptionKey = base64Url.decode(encryptionKeyStr);
+    
+    if (Hive.isBoxOpen(boxName)) {
+      await Hive.box(boxName).close();
+    }
+    
     await Hive.openBox(boxName, encryptionCipher: HiveAesCipher(encryptionKey));
   }
 

@@ -25,6 +25,10 @@ class SyncService {
     AutoSyncManager.setSyncingState(true);
 
     try {
+      if (isBackground) {
+        // Ensure we load fresh data from disk that might have been added by the foreground app
+        await LocalStorage.init();
+      }
       final items = LocalStorage.getItems();
       print("🔄 [SyncService] Found ${items.length} pending items in offline queue.");
       if (items.isEmpty) return;
