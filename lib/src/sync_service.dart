@@ -25,81 +25,80 @@ class SyncService {
     AutoSyncManager.setSyncingState(true);
 
     try {
-      if (isBackground) {
-        // Ensure we load fresh data from disk that might have been added by the foreground app
-        await LocalStorage.init();
-      }
-      final items = LocalStorage.getItems();
-      print("🔄 [SyncService] Found ${items.length} pending items in offline queue.");
-      if (items.isEmpty) return;
-      
-      const timeoutDuration = Duration(seconds: 15);
+      while (true) {
+        final items = LocalStorage.getItems();
+        if (items.isEmpty) {
+          print("🔄 [SyncService] Queue is empty. Stopping sync loop.");
+          break;
+        }
 
-      for (SyncItem item in items) {
-        try {
-          final uri = Uri.parse(item.endpoint);
-          final body = jsonEncode(item.data);
-          final headers = {
-            "Content-Type": "application/json",
-            if (item.headers != null) ...item.headers!,
-          };
+        print("🔄 [SyncService] Found ${items.length} pending items in offline queue.");
+        
+        const timeoutDuration = Duration(seconds: 15);
 
-          http.Response response;
-          final method = item.method.toUpperCase();
+        for (SyncItem item in items) {
+          try {
+            final uri = Uri.parse(item.endpoint);
+            final body = jsonEncode(item.data);
+            final headers = {
+              "Content-Type": "application/json",
+              if (item.headers != null) ...item.headers!,
+            };
 
-          if (item.files != null && item.files!.isNotEmpty) {
-            var request = http.MultipartRequest(method, uri);
-            request.headers.addAll(headers);
+            http.Response response;
+            final method = item.method.toUpperCase();
 
-            item.data.forEach((key, value) {
-              request.fields[key] = value.toString();
-            });
+            if (item.files != null && item.files!.isNotEmpty) {
+              var request = http.MultipartRequest(method, uri);
+              request.headers.addAll(headers);
 
-            for (var entry in item.files!.entries) {
-              request.files.add(
-                await http.MultipartFile.fromPath(entry.key, entry.value),
-              );
-            }
+              item.data.forEach((key, value) {
+                request.fields[key] = value.toString();
+              });
 
-            final streamedResponse = await request.send().timeout(timeoutDuration);
-            response = await http.Response.fromStream(streamedResponse);
-          } else {
-            if (method == "GET") {
-              response = await http.get(uri, headers: headers).timeout(timeoutDuration);
-            } else if (method == "PUT") {
-              response = await http.put(uri, headers: headers, body: body).timeout(timeoutDuration);
-            } else if (method == "DELETE") {
-              response = await http.delete(uri, headers: headers, body: body).timeout(timeoutDuration);
-            } else if (method == "PATCH") {
-              response = await http.patch(uri, headers: headers, body: body).timeout(timeoutDuration);
+              for (var entry in item.files!.entries) {
+                request.files.add(
+                  await http.MultipartFile.fromPath(entry.key, entry.value),
+                );
+              }
+
+              final streamedResponse = await request.send().timeout(timeoutDuration);
+              response = await http.Response.fromStream(streamedResponse);
             } else {
-              response = await http.post(uri, headers: headers, body: body).timeout(timeoutDuration);
+              if (method == "GET") {
+                response = await http.get(uri, headers: headers).timeout(timeoutDuration);
+              } else if (method == "PUT") {
+                response = await http.put(uri, headers: headers, body: body).timeout(timeoutDuration);
+              } else if (method == "DELETE") {
+                response = await http.delete(uri, headers: headers, body: body).timeout(timeoutDuration);
+              } else if (method == "PATCH") {
+                response = await http.patch(uri, headers: headers, body: body).timeout(timeoutDuration);
+              } else {
+                response = await http.post(uri, headers: headers, body: body).timeout(timeoutDuration);
+              }
             }
-          }
 
-          if (response.statusCode >= 200 && response.statusCode < 300) {
-            final stateStr = isBackground ? "(Killed/Background State)" : "(Foreground State)";
-            print("✅ [SyncService] $stateStr Successfully synced request: ${item.endpoint}");
-            await LocalStorage.removeItem(item.id);
-            AutoSyncManager.updatePendingItemsCount();
-          } else if (response.statusCode >= 400 && response.statusCode < 500) {
-            print("⚠️ [SyncService] Client Error (discarded): ${response.statusCode} for ${item.endpoint}");
-            // Client errors (4xx) generally won't succeed on retry, discard them.
-            // (Note: you may want to customize this if you handle 401 token refreshes elsewhere)
-            await LocalStorage.removeItem(item.id);
-            AutoSyncManager.updatePendingItemsCount();
-          } else {
-            // Treat 5xx or other errors as a failure to trigger retry logic
-            throw Exception('HTTP Error: ${response.statusCode}');
-          }
-        } catch (e) {
-          item.retryCount++;
+            if (response.statusCode >= 200 && response.statusCode < 300) {
+              final stateStr = isBackground ? "(Killed/Background State)" : "(Foreground State)";
+              print("✅ [SyncService] $stateStr Successfully synced request: ${item.endpoint}");
+              await LocalStorage.removeItem(item.id);
+              AutoSyncManager.updatePendingItemsCount();
+            } else if (response.statusCode >= 400 && response.statusCode < 500) {
+              print("⚠️ [SyncService] Client Error (discarded): ${response.statusCode} for ${item.endpoint}");
+              await LocalStorage.removeItem(item.id);
+              AutoSyncManager.updatePendingItemsCount();
+            } else {
+              throw Exception('HTTP Error: ${response.statusCode}');
+            }
+          } catch (e) {
+            item.retryCount++;
 
-          if (item.retryCount >= maxRetries) {
-            await LocalStorage.removeItem(item.id);
-            AutoSyncManager.updatePendingItemsCount();
-          } else {
-            await LocalStorage.updateItem(item); // save retry count
+            if (item.retryCount >= maxRetries) {
+              await LocalStorage.removeItem(item.id);
+              AutoSyncManager.updatePendingItemsCount();
+            } else {
+              await LocalStorage.updateItem(item); // save retry count
+            }
           }
         }
       }

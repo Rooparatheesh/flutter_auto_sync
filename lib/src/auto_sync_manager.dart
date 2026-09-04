@@ -26,6 +26,22 @@ void onStart(ServiceInstance service) async {
       service.setAsBackgroundService();
     });
   }
+
+  service.on('enqueue').listen((event) async {
+    if (event != null) {
+      try {
+        final item = SyncItem.fromJson(Map<String, dynamic>.from(event));
+        await LocalStorage.addItem(item);
+        service.invoke('updateCount', {'count': LocalStorage.getItems().length});
+        if (await ConnectivityService.isOnline()) {
+          SyncService.sync(isBackground: true);
+        }
+      } catch (e) {
+        print("Error enqueuing item: $e");
+      }
+    }
+  });
+
   service.on('stopService').listen((event) {
     service.stopSelf();
   });
@@ -49,7 +65,9 @@ void onStart(ServiceInstance service) async {
   });
 
   // Keep alive timer just in case, but we rely mostly on connectivity stream
-  Timer.periodic(const Duration(minutes: 15), (timer) async {
+  // Reduced to 1 minute so it quickly picks up pending items if the app is killed
+  // while a large queue (e.g. 10000 items) is still syncing.
+  Timer.periodic(const Duration(minutes: 1), (timer) async {
     if (await ConnectivityService.isOnline()) {
       await SyncService.sync(isBackground: true);
     }
@@ -78,6 +96,13 @@ class AutoSyncManager {
     ConnectivityService.connectionStream.listen((event) async {
       if (await ConnectivityService.isOnline()) {
         await SyncService.sync();
+      }
+    });
+
+    final service = FlutterBackgroundService();
+    service.on('updateCount').listen((event) {
+      if (event != null && event['count'] != null) {
+        _pendingItemsController.add(event['count'] as int);
       }
     });
   }
@@ -145,8 +170,16 @@ class AutoSyncManager {
       priority: priority,
     );
 
-    await LocalStorage.addItem(item);
-    updatePendingItemsCount();
+    final service = FlutterBackgroundService();
+    if (await service.isRunning()) {
+      service.invoke('enqueue', item.toJson());
+    } else {
+      await LocalStorage.addItem(item);
+      updatePendingItemsCount();
+      if (await ConnectivityService.isOnline()) {
+        SyncService.sync();
+      }
+    }
   }
 
   static Future<void> sync() async {
