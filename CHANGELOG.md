@@ -1,3 +1,8 @@
+## 1.3.0
+
+- **Architecture**: Redesigned offline storage and background syncing into a "Kill-Proof Architecture". The background service now acts as the single source of truth for the local database (`Hive`), preventing file corruption when queueing thousands of requests.
+- **Feature**: Massive offline queues (e.g., 50,000+ items) will seamlessly continue syncing in the background if the app is force-killed, with zero data loss or interruption.
+
 ## 1.2.0
 
 - **Feature**: Replaced `workmanager` with `flutter_background_service`. The package now uses a persistent Foreground Service to achieve **instant** background syncing the exact second network connectivity is restored, even when the app is killed.
