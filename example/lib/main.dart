@@ -4,15 +4,16 @@ import 'package:flutter_auto_sync/flutter_auto_sync.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // 1. Initialize normal foreground/background sync
   await AutoSyncManager.init();
-  
+
   // 2. Initialize native killed-state background sync using Workmanager
   AutoSyncManager.initializeBackgroundSync();
-  
+
   runApp(const MyApp());
 }
+
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
@@ -26,7 +27,7 @@ class _MyAppState extends State<MyApp> {
   void _addManualRequests() async {
     for (int i = 0; i < 100; i++) {
       _requestCounter++;
-      
+
       await AutoSyncManager.addToQueue(
         endpoint: "https://jsonplaceholder.typicode.com/posts",
         method: "POST",
@@ -55,7 +56,7 @@ class _MyAppState extends State<MyApp> {
                 style: TextStyle(fontSize: 16),
               ),
               const SizedBox(height: 30),
-              
+
               ElevatedButton.icon(
                 onPressed: _addManualRequests,
                 icon: const Icon(Icons.add_to_queue),
@@ -70,7 +71,10 @@ class _MyAppState extends State<MyApp> {
                 builder: (context, snapshot) {
                   return Text(
                     "${snapshot.data} items in offline queue",
-                    style: const TextStyle(fontSize: 24, color: Colors.blue, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                        fontSize: 24,
+                        color: Colors.blue,
+                        fontWeight: FontWeight.bold),
                   );
                 },
               ),

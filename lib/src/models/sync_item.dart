@@ -9,20 +9,28 @@ library;
 class SyncItem {
   /// Unique UUID for this request.
   final String id;
+
   /// The API endpoint URL.
   final String endpoint;
+
   /// The JSON data body to send.
   final Map<String, dynamic> data;
+
   /// The HTTP method (GET, POST, PUT, DELETE, PATCH).
   final String method;
+
   /// Optional custom HTTP headers.
   final Map<String, String>? headers;
+
   /// Optional map of file fields (field_name -> local_file_path) for Multipart uploads.
   final Map<String, String>? files;
+
   /// Number of times this request has failed and been retried.
   int retryCount;
+
   /// Whether this item has successfully synced.
   bool synced;
+
   /// Queue priority (higher number syncs first).
   int priority;
 

@@ -58,7 +58,8 @@ void onStart(ServiceInstance service) async {
     }
 
     if (await ConnectivityService.isOnline()) {
-      print("🌐 [Background Service] Online. Syncing ${items.length} items (killed state supported)...");
+      print(
+          "🌐 [Background Service] Online. Syncing ${items.length} items (killed state supported)...");
       updateNotification(items.length, isSyncing: true);
       await SyncService.sync(isBackground: true);
       final remaining = LocalStorage.getItems().length;
@@ -105,7 +106,8 @@ void onStart(ServiceInstance service) async {
       if (await ConnectivityService.isOnline()) {
         final items = LocalStorage.getItems();
         if (items.isNotEmpty) {
-          print("🌐 [Background Service] Network restored in killed state. Syncing ${items.length} items...");
+          print(
+              "🌐 [Background Service] Network restored in killed state. Syncing ${items.length} items...");
           await runBackgroundSync();
         }
       }
@@ -144,7 +146,9 @@ class AutoSyncManager {
     // to avoid duplicate simultaneous HTTP requests and battery waste.
     ConnectivityService.connectionStream.listen((event) async {
       final isBgRunning = await service.isRunning();
-      if (!isBgRunning && await ConnectivityService.isOnline() && LocalStorage.getItems().isNotEmpty) {
+      if (!isBgRunning &&
+          await ConnectivityService.isOnline() &&
+          LocalStorage.getItems().isNotEmpty) {
         await SyncService.sync();
       }
     });

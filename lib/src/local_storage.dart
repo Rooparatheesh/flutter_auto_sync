@@ -15,6 +15,7 @@ import 'models/sync_item.dart';
 class LocalStorage {
   /// Name of the Hive box used for storing the queue.
   static const String boxName = "sync_queue";
+
   /// Key name used in secure storage to fetch the AES key.
   static const String keyName = "hive_encryption_key";
 
@@ -35,11 +36,11 @@ class LocalStorage {
     }
 
     final encryptionKey = base64Url.decode(encryptionKeyStr);
-    
+
     if (Hive.isBoxOpen(boxName)) {
       await Hive.box(boxName).close();
     }
-    
+
     await Hive.openBox(boxName, encryptionCipher: HiveAesCipher(encryptionKey));
   }
 

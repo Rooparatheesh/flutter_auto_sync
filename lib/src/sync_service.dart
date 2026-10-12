@@ -17,7 +17,7 @@ class SyncService {
   static bool _isSyncing = false;
 
   /// Triggers a synchronization attempt.
-  /// 
+  ///
   /// This method iterates through all pending items in the offline queue,
   /// attempts to send them via HTTP, and removes them if successful.
   static Future<void> sync({bool isBackground = false}) async {
@@ -38,14 +38,16 @@ class SyncService {
           break;
         }
 
-        print("🔄 [SyncService] Found ${items.length} pending items in offline queue.");
-        
+        print(
+            "🔄 [SyncService] Found ${items.length} pending items in offline queue.");
+
         const timeoutDuration = Duration(seconds: 15);
         bool networkLost = false;
 
         for (SyncItem item in items) {
           if (!await ConnectivityService.isOnline()) {
-            print("📶 [SyncService] Connection lost while iterating queue. Pausing.");
+            print(
+                "📶 [SyncService] Connection lost while iterating queue. Pausing.");
             networkLost = true;
             break;
           }
@@ -75,38 +77,56 @@ class SyncService {
                 );
               }
 
-              final streamedResponse = await request.send().timeout(timeoutDuration);
+              final streamedResponse =
+                  await request.send().timeout(timeoutDuration);
               response = await http.Response.fromStream(streamedResponse);
             } else {
               if (method == "GET") {
-                response = await http.get(uri, headers: headers).timeout(timeoutDuration);
+                response = await http
+                    .get(uri, headers: headers)
+                    .timeout(timeoutDuration);
               } else if (method == "PUT") {
-                response = await http.put(uri, headers: headers, body: body).timeout(timeoutDuration);
+                response = await http
+                    .put(uri, headers: headers, body: body)
+                    .timeout(timeoutDuration);
               } else if (method == "DELETE") {
-                response = await http.delete(uri, headers: headers, body: body).timeout(timeoutDuration);
+                response = await http
+                    .delete(uri, headers: headers, body: body)
+                    .timeout(timeoutDuration);
               } else if (method == "PATCH") {
-                response = await http.patch(uri, headers: headers, body: body).timeout(timeoutDuration);
+                response = await http
+                    .patch(uri, headers: headers, body: body)
+                    .timeout(timeoutDuration);
               } else {
-                response = await http.post(uri, headers: headers, body: body).timeout(timeoutDuration);
+                response = await http
+                    .post(uri, headers: headers, body: body)
+                    .timeout(timeoutDuration);
               }
             }
 
             if (response.statusCode >= 200 && response.statusCode < 300) {
-              final stateStr = isBackground ? "(Killed/Background State)" : "(Foreground State)";
-              print("✅ [SyncService] $stateStr Successfully synced request: ${item.endpoint}");
+              final stateStr = isBackground
+                  ? "(Killed/Background State)"
+                  : "(Foreground State)";
+              print(
+                  "✅ [SyncService] $stateStr Successfully synced request: ${item.endpoint}");
               await LocalStorage.removeItem(item.id);
               AutoSyncManager.updatePendingItemsCount();
-            } else if (response.statusCode >= 400 && response.statusCode < 500) {
-              print("⚠️ [SyncService] Client Error (discarded): ${response.statusCode} for ${item.endpoint}");
+            } else if (response.statusCode >= 400 &&
+                response.statusCode < 500) {
+              print(
+                  "⚠️ [SyncService] Client Error (discarded): ${response.statusCode} for ${item.endpoint}");
               await LocalStorage.removeItem(item.id);
               AutoSyncManager.updatePendingItemsCount();
             } else {
               throw Exception('HTTP Error: ${response.statusCode}');
             }
           } catch (e) {
-            print("❌ [SyncService] Error processing request ${item.endpoint}: $e");
+            print(
+                "❌ [SyncService] Error processing request ${item.endpoint}: $e");
             if (!await ConnectivityService.isOnline()) {
-              print("📶 [SyncService] Network lost. Pausing sync without consuming retries.");
+              print(
+                  "📶 [SyncService] Network lost. Pausing sync without consuming retries.");
               networkLost = true;
               break;
             }
@@ -114,7 +134,8 @@ class SyncService {
             item.retryCount++;
 
             if (item.retryCount >= maxRetries) {
-              print("⚠️ [SyncService] Max retries ($maxRetries) reached for ${item.endpoint}. Discarding.");
+              print(
+                  "⚠️ [SyncService] Max retries ($maxRetries) reached for ${item.endpoint}. Discarding.");
               await LocalStorage.removeItem(item.id);
               AutoSyncManager.updatePendingItemsCount();
             } else {
