@@ -19,6 +19,7 @@ void onStart(ServiceInstance service) async {
   await LocalStorage.init();
 
   if (service is AndroidServiceInstance) {
+    service.setAsForegroundService();
     service.on('setAsForeground').listen((event) {
       service.setAsForegroundService();
     });
@@ -27,14 +28,57 @@ void onStart(ServiceInstance service) async {
     });
   }
 
+  void updateNotification(int count, {bool isSyncing = false}) {
+    if (service is AndroidServiceInstance) {
+      if (isSyncing) {
+        service.setForegroundNotificationInfo(
+          title: 'Auto Sync Active',
+          content: 'Syncing $count offline requests...',
+        );
+      } else if (count > 0) {
+        service.setForegroundNotificationInfo(
+          title: 'Auto Sync Active',
+          content: '$count offline requests pending network.',
+        );
+      } else {
+        service.setForegroundNotificationInfo(
+          title: 'Auto Sync Ready',
+          content: 'All offline requests synced. Idle.',
+        );
+      }
+    }
+  }
+
+  Future<void> runBackgroundSync() async {
+    final items = LocalStorage.getItems();
+    if (items.isEmpty) {
+      service.invoke('updateCount', {'count': 0});
+      updateNotification(0);
+      return;
+    }
+
+    if (await ConnectivityService.isOnline()) {
+      print("🌐 [Background Service] Online. Syncing ${items.length} items (killed state supported)...");
+      updateNotification(items.length, isSyncing: true);
+      await SyncService.sync(isBackground: true);
+      final remaining = LocalStorage.getItems().length;
+      service.invoke('updateCount', {'count': remaining});
+      updateNotification(remaining, isSyncing: false);
+    } else {
+      updateNotification(items.length, isSyncing: false);
+    }
+  }
+
   service.on('enqueue').listen((event) async {
     if (event != null) {
       try {
         final item = SyncItem.fromJson(Map<String, dynamic>.from(event));
         await LocalStorage.addItem(item);
-        service.invoke('updateCount', {'count': LocalStorage.getItems().length});
+        final count = LocalStorage.getItems().length;
+        service.invoke('updateCount', {'count': count});
+        updateNotification(count);
         if (await ConnectivityService.isOnline()) {
-          SyncService.sync(isBackground: true);
+          await runBackgroundSync();
         }
       } catch (e) {
         print("Error enqueuing item: $e");
@@ -47,30 +91,25 @@ void onStart(ServiceInstance service) async {
   });
 
   print("==================================================");
-  print("🚀 BACKGROUND SERVICE STARTED (FOREGROUND MODE)");
+  print("🚀 BACKGROUND SERVICE STARTED (KILLED STATE READY)");
   print("==================================================");
 
-  // Sync right away if online
-  if (await ConnectivityService.isOnline()) {
-    print("🌐 Network is online on start. Syncing...");
-    await SyncService.sync(isBackground: true);
-  }
+  // Sync right away if online and items exist
+  await runBackgroundSync();
 
-  // Listen to network changes forever
+  // Listen to network changes with debounce so reconnecting triggers instant sync in killed state
+  Timer? debounceTimer;
   ConnectivityService.connectionStream.listen((event) async {
-    if (await ConnectivityService.isOnline()) {
-      print("🌐 Network became online in background. Syncing instantly...");
-      await SyncService.sync(isBackground: true);
-    }
-  });
-
-  // Keep alive timer just in case, but we rely mostly on connectivity stream
-  // Reduced to 1 minute so it quickly picks up pending items if the app is killed
-  // while a large queue (e.g. 10000 items) is still syncing.
-  Timer.periodic(const Duration(minutes: 1), (timer) async {
-    if (await ConnectivityService.isOnline()) {
-      await SyncService.sync(isBackground: true);
-    }
+    debounceTimer?.cancel();
+    debounceTimer = Timer(const Duration(milliseconds: 1500), () async {
+      if (await ConnectivityService.isOnline()) {
+        final items = LocalStorage.getItems();
+        if (items.isNotEmpty) {
+          print("🌐 [Background Service] Network restored in killed state. Syncing ${items.length} items...");
+          await runBackgroundSync();
+        }
+      }
+    });
   });
 }
 
@@ -83,21 +122,16 @@ class AutoSyncManager {
   static final StreamController<bool> _isSyncingController =
       StreamController<bool>.broadcast();
 
+  /// Stream that emits the current count of pending offline items.
   static Stream<int> get pendingItemsStream => _pendingItemsController.stream;
 
+  /// Stream that emits true when synchronization is active.
+  static Stream<bool> get isSyncingStream => _isSyncingController.stream;
+
+  /// Initializes local database and sets up sync listeners.
   static Future<void> init() async {
     await LocalStorage.init();
     updatePendingItemsCount();
-
-    if (await ConnectivityService.isOnline()) {
-      SyncService.sync(); 
-    }
-
-    ConnectivityService.connectionStream.listen((event) async {
-      if (await ConnectivityService.isOnline()) {
-        await SyncService.sync();
-      }
-    });
 
     final service = FlutterBackgroundService();
     service.on('updateCount').listen((event) {
@@ -105,9 +139,18 @@ class AutoSyncManager {
         _pendingItemsController.add(event['count'] as int);
       }
     });
+
+    // Only sync from main isolate if background service is NOT running
+    // to avoid duplicate simultaneous HTTP requests and battery waste.
+    ConnectivityService.connectionStream.listen((event) async {
+      final isBgRunning = await service.isRunning();
+      if (!isBgRunning && await ConnectivityService.isOnline() && LocalStorage.getItems().isNotEmpty) {
+        await SyncService.sync();
+      }
+    });
   }
 
-  /// Initializes foreground service to keep app alive
+  /// Initializes background service to achieve instant syncing in killed state.
   static Future<void> initializeBackgroundSync() async {
     final service = FlutterBackgroundService();
 
@@ -116,7 +159,7 @@ class AutoSyncManager {
       'auto_sync_foreground',
       'Auto Sync Service',
       description: 'This channel is used for auto sync foreground service.',
-      importance: Importance.low, // low importance to prevent sounds/vibrations
+      importance: Importance.low, // low importance prevents sounds/vibrations
     );
 
     final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -132,7 +175,7 @@ class AutoSyncManager {
     await service.configure(
       androidConfiguration: AndroidConfiguration(
         onStart: onStart,
-        autoStart: true,
+        autoStart: true, // Keep alive to support syncing in killed state
         isForegroundMode: true,
         notificationChannelId: 'auto_sync_foreground',
         initialNotificationTitle: 'Auto Sync Active',
@@ -144,14 +187,15 @@ class AutoSyncManager {
         autoStart: true,
         onForeground: onStart,
         onBackground: (ServiceInstance service) {
-          return true; // We don't have true background execution like android on iOS
+          return true;
         },
       ),
     );
 
-    service.startService();
+    await service.startService();
   }
 
+  /// Adds a new API request to the offline queue.
   static Future<void> addToQueue({
     required String endpoint,
     required Map<String, dynamic> data,
@@ -171,7 +215,9 @@ class AutoSyncManager {
     );
 
     final service = FlutterBackgroundService();
-    if (await service.isRunning()) {
+    final isRunning = await service.isRunning();
+
+    if (isRunning) {
       service.invoke('enqueue', item.toJson());
     } else {
       await LocalStorage.addItem(item);

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'connectivity_service.dart';
 import 'local_storage.dart';
 import 'models/sync_item.dart';
 import 'auto_sync_manager.dart';
@@ -32,11 +33,23 @@ class SyncService {
           break;
         }
 
+        if (!await ConnectivityService.isOnline()) {
+          print("📶 [SyncService] Device is offline. Pausing sync.");
+          break;
+        }
+
         print("🔄 [SyncService] Found ${items.length} pending items in offline queue.");
         
         const timeoutDuration = Duration(seconds: 15);
+        bool networkLost = false;
 
         for (SyncItem item in items) {
+          if (!await ConnectivityService.isOnline()) {
+            print("📶 [SyncService] Connection lost while iterating queue. Pausing.");
+            networkLost = true;
+            break;
+          }
+
           try {
             final uri = Uri.parse(item.endpoint);
             final body = jsonEncode(item.data);
@@ -91,15 +104,29 @@ class SyncService {
               throw Exception('HTTP Error: ${response.statusCode}');
             }
           } catch (e) {
+            print("❌ [SyncService] Error processing request ${item.endpoint}: $e");
+            if (!await ConnectivityService.isOnline()) {
+              print("📶 [SyncService] Network lost. Pausing sync without consuming retries.");
+              networkLost = true;
+              break;
+            }
+
             item.retryCount++;
 
             if (item.retryCount >= maxRetries) {
+              print("⚠️ [SyncService] Max retries ($maxRetries) reached for ${item.endpoint}. Discarding.");
               await LocalStorage.removeItem(item.id);
               AutoSyncManager.updatePendingItemsCount();
             } else {
               await LocalStorage.updateItem(item); // save retry count
+              // Backoff delay before next retry to avoid draining battery
+              await Future.delayed(Duration(seconds: item.retryCount * 2));
             }
           }
+        }
+
+        if (networkLost) {
+          break;
         }
       }
     } finally {
