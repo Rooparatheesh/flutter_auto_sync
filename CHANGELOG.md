@@ -1,3 +1,10 @@
+## 1.3.1
+
+- **Fix**: Resolved high background battery drain by removing aggressive keep-alive timers and transitioning to an event-driven architecture.
+- **Fix**: Added network disconnect detection and exponential backoff to sync retry loops to prevent radio thrashing.
+- **Improvement**: Optimized killed-state syncing with debounced network reconnect handling and single-isolate sync worker.
+- **Feature**: Exposed `AutoSyncManager.isSyncingStream` for reactive UI syncing indicators.
+
 ## 1.3.0
 
 - **Architecture**: Redesigned offline storage and background syncing into a "Kill-Proof Architecture". The background service now acts as the single source of truth for the local database (`Hive`), preventing file corruption when queueing thousands of requests.
